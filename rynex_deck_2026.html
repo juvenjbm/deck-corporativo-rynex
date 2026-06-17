@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rynex · Deck Corporativo 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #08080f;
+  --surface:   #111120;
+  --surface2:  #16162a;
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.13);
+  --accent:    #6c63ff;
+  --accent2:   #9b95ff;
+  --glow:      rgba(108,99,255,0.15);
+  --teal:      #1dcba0;
+  --teal-dim:  rgba(29,203,160,0.1);
+  --white:     #ffffff;
+  --text:      rgba(255,255,255,0.85);
+  --muted:     rgba(255,255,255,0.5);
+  --muted2:    rgba(255,255,255,0.3);
+  --r:         14px;
+  --r-sm:      8px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.6;
+  user-select: none;
+}
+
+/* ── DECK CONTAINER ── */
+#deck {
+  width: 100vw; height: 100vh;
+  position: relative; overflow: hidden;
+}
+
+/* ── SLIDES ── */
+.slide {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  padding: 0;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.55s cubic-bezier(.4,0,.2,1), transform 0.55s cubic-bezier(.4,0,.2,1);
+  transform: translateX(60px);
+}
+.slide.active {
+  opacity: 1; pointer-events: all;
+  transform: translateX(0);
+}
+.slide.exit {
+  opacity: 0;
+  transform: translateX(-60px);
+}
+
+/* ── NOISE TEXTURE ── */
+.slide::before {
+  content: '';
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity: 0.4;
+}
+
+.slide-inner {
+  position: relative; z-index: 1;
+  flex: 1; display: flex; flex-direction: column;
+}
+
+/* ── TOPBAR ── */
+.s-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 48px 0;
+  flex-shrink: 0;
+}
+.s-brand {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 15px; font-weight: 700;
+  color: var(--white); letter-spacing: -0.3px;
+}
+.s-brand span { color: var(--accent2); }
+.s-slide-num {
+  font-size: 11px; color: var(--muted2);
+  font-family: 'Space Grotesk', sans-serif; font-weight: 600;
+  letter-spacing: 1px;
+}
+
+/* ── BOTTOM NAV ── */
+#nav-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  gap: 16px; padding: 14px 48px 18px;
+  background: linear-gradient(to top, rgba(8,8,15,0.95) 0%, transparent 100%);
+}
+.nav-btn-prev, .nav-btn-next {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border2);
+  color: var(--white); font-size: 16px;
+  width: 40px; height: 40px; border-radius: 50%;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+.nav-btn-prev:hover, .nav-btn-next:hover {
+  background: rgba(108,99,255,0.2); border-color: rgba(108,99,255,0.4);
+  transform: scale(1.08);
+}
+.nav-btn-next { background: var(--accent); border-color: var(--accent); }
+.nav-btn-next:hover { background: #7c74ff; }
+.nav-dots { display: flex; gap: 6px; align-items: center; }
+.dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(255,255,255,0.2); cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+.dot.active { background: var(--accent2); transform: scale(1.4); }
+#progress-bar {
+  position: fixed; top: 0; left: 0; height: 2px; z-index: 200;
+  background: linear-gradient(90deg, var(--accent), var(--teal));
+  transition: width 0.4s ease;
+}
+
+/* ── GLOW BLOBS ── */
+.blob {
+  position: absolute; border-radius: 50%; pointer-events: none; filter: blur(80px);
+}
+.blob-purple { background: rgba(108,99,255,0.18); }
+.blob-teal   { background: rgba(29,203,160,0.12); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; } to { opacity: 1; }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.anim-1 { animation: fadeUp 0.55s 0.05s both; }
+.anim-2 { animation: fadeUp 0.55s 0.15s both; }
+.anim-3 { animation: fadeUp 0.55s 0.25s both; }
+.anim-4 { animation: fadeUp 0.55s 0.35s both; }
+.anim-5 { animation: fadeUp 0.55s 0.42s both; }
+.anim-fade { animation: fadeIn 0.7s 0.1s both; }
+.anim-scale { animation: scaleIn 0.5s 0.1s both; }
+
+/* ─────────────────────────────────────────────
+   SLIDE LAYOUTS
+───────────────────────────────────────────── */
+
+/* ── S1: PORTADA ── */
+#s1 { background: radial-gradient(ellipse 80% 60% at 70% 30%, rgba(108,99,255,0.18) 0%, transparent 60%), var(--bg); }
+.s1-content {
+  flex: 1; display: flex; flex-direction: column;
+  justify-content: center; padding: 0 48px 80px;
+  max-width: 780px;
+}
+.s1-eyebrow {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 28px;
+}
+.s1-tag {
+  font-size: 10px; font-weight: 600; letter-spacing: 2px;
+  text-transform: uppercase; padding: 4px 12px; border-radius: 20px;
+}
+.tag-accent { background: rgba(108,99,255,0.15); border: 1px solid rgba(108,99,255,0.3); color: var(--accent2); }
+.tag-teal   { background: var(--teal-dim); border: 1px solid rgba(29,203,160,0.25); color: var(--teal); }
+.tag-muted  { background: rgba(255,255,255,0.05); border: 1px solid var(--border2); color: var(--muted); }
+.s1-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(36px, 5vw, 64px); font-weight: 800;
+  line-height: 1.05; letter-spacing: -2px; color: var(--white);
+  margin-bottom: 20px;
+}
+.s1-title .hl { color: var(--accent2); }
+.s1-sub {
+  font-size: clamp(14px, 1.5vw, 17px); color: var(--muted);
+  max-width: 520px; line-height: 1.7; margin-bottom: 36px;
+}
+.s1-kpis {
+  display: flex; gap: 28px; flex-wrap: wrap;
+}
+.s1-kpi { display: flex; flex-direction: column; gap: 2px; }
+.s1-kpi .k-num {
+  font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700;
+  color: var(--white); line-height: 1;
+}
+.s1-kpi .k-num.t { color: var(--teal); }
+.s1-kpi .k-num.a { color: var(--accent2); }
+.s1-kpi .k-lbl { font-size: 11px; color: var(--muted2); }
+.s1-divider { width: 1px; background: var(--border2); align-self: stretch; }
+.s1-geo {
+  position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+  width: min(45vw, 500px); height: min(45vw, 500px); opacity: 0.15;
+  background: conic-gradient(from 0deg, var(--accent), var(--teal), var(--accent));
+  border-radius: 50%; filter: blur(2px);
+  animation: fadeIn 1.5s 0.3s both;
+}
+
+/* ── S2: SOBRE NOSOTROS ── */
+#s2 { background: var(--bg); }
+.s2-layout {
+  flex: 1; display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0; padding: 28px 48px 80px;
+}
+.s2-left { display: flex; flex-direction: column; justify-content: center; padding-right: 40px; border-right: 1px solid var(--border); }
+.s2-right { display: flex; flex-direction: column; justify-content: center; padding-left: 40px; gap: 14px; }
+.s2-label { font-size: 10px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: var(--accent2); margin-bottom: 12px; }
+.s2-heading {
+  font-family: 'Space Grotesk', sans-serif; font-size: clamp(28px, 3.5vw, 44px);
+  font-weight: 700; color: var(--white); letter-spacing: -1px; line-height: 1.1;
+  margin-bottom: 20px;
+}
+.s2-heading em { font-style: normal; color: var(--teal); }
+.s2-body { font-size: 13.5px; color: var(--muted); line-height: 1.8; }
+.s2-pill {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 14px 16px;
+  display: flex; align-items: flex-start; gap: 12px;
+}
+.s2-pill .p-ico { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.s2-pill .p-ttl { font-size: 13px; font-weight: 600; color: var(--white); margin-bottom: 2px; }
+.s2-pill .p-dsc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+/* ── S3: SERVICIOS OVERVIEW ── */
+#s3 { background: var(--bg); }
+.s3-layout { flex: 1; display: flex; flex-direction: column; padding: 24px 48px 80px; justify-content: center; }
+.s3-head { margin-bottom: 24px; }
+.s3-label { font-size: 10px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: var(--accent2); margin-bottom: 8px; }
+.s3-title { font-family: 'Space Grotesk', sans-serif; font-size: clamp(24px,3vw,38px); font-weight: 700; color: var(--white); letter-spacing: -0.8px; }
+.s3-title em { font-style: normal; color: var(--accent2); }
+.s3-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+  align-items: start; align-content: start; flex: 1;
+}
+.s3-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 18px 14px;
+  display: flex; flex-direction: column; gap: 10px;
+  transition: border-color 0.2s, background 0.2s;
+  position: relative; overflow: hidden;
+  align-self: start; height: auto;
+}
+.s3-card::before {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--teal));
+  opacity: 0; transition: opacity 0.2s;
+}
+.s3-card:hover { border-color: rgba(108,99,255,0.3); background: var(--surface2); }
+.s3-card:hover::before { opacity: 1; }
+.s3-num {
+  font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 700;
+  color: var(--accent2); letter-spacing: 1px;
+}
+.s3-ico { font-size: 26px; }
+.s3-name { font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; color: var(--white); line-height: 1.3; }
+.s3-desc { font-size: 11.5px; color: var(--muted); line-height: 1.5; flex: 1; }
+
+/* ── SERVICE SLIDES (S4-S8): SHARED ── */
+.svc-layout {
+  flex: 1; display: grid; grid-template-columns: 1fr 1.6fr;
+  gap: 0; padding: 28px 48px 80px;
+}
+.svc-left {
+  display: flex; flex-direction: column; justify-content: center;
+  padding-right: 36px; border-right: 1px solid var(--border);
+}
+.svc-num-big {
+  font-family: 'Space Grotesk', sans-serif; font-size: 80px; font-weight: 800;
+  line-height: 1; letter-spacing: -4px; color: rgba(255,255,255,0.04);
+  margin-bottom: -20px; position: relative; z-index: 0;
+}
+.svc-badge {
+  position: relative; z-index: 1;
+  display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; padding: 4px 12px; border-radius: 20px; margin-bottom: 10px;
+}
+.svc-title {
+  font-family: 'Space Grotesk', sans-serif; font-size: clamp(20px,2.5vw,30px);
+  font-weight: 700; color: var(--white); letter-spacing: -0.5px;
+  line-height: 1.2; margin-bottom: 14px;
+}
+.svc-title em { font-style: normal; }
+.svc-intro { font-size: 13px; color: var(--muted); line-height: 1.7; margin-bottom: 18px; }
+.svc-deliverables { font-size: 11px; color: var(--muted2); line-height: 1.8; }
+.svc-deliverables strong { color: var(--muted); font-weight: 500; }
+
+.svc-right {
+  display: flex; flex-direction: column; justify-content: center;
+  padding-left: 36px; gap: 10px;
+}
+.svc-col { display: flex; flex-direction: column; gap: 8px; }
+.svc-col-label {
+  font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--muted2); margin-bottom: 2px;
+  display: flex; align-items: center; gap: 6px;
+}
+.svc-col-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.svc-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 9px 11px; font-size: 12px; color: var(--text);
+  line-height: 1.5;
+}
+.svc-item .chk {
+  width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
+  display: flex; align-items: center; justify-content: center; font-size: 8px;
+}
+
+/* ── S9: CTA ── */
+#s9 {
+  background: radial-gradient(ellipse 70% 70% at 30% 60%, rgba(108,99,255,0.14) 0%, transparent 60%),
+              radial-gradient(ellipse 50% 50% at 80% 20%, rgba(29,203,160,0.08) 0%, transparent 60%),
+              var(--bg);
+}
+.s9-layout {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 0 48px 80px; text-align: center;
+}
+.s9-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--teal); margin-bottom: 16px; }
+.s9-title {
+  font-family: 'Space Grotesk', sans-serif; font-size: clamp(32px, 4.5vw, 58px);
+  font-weight: 800; letter-spacing: -2px; color: var(--white); line-height: 1.1; margin-bottom: 16px;
+}
+.s9-title em { font-style: normal; color: var(--accent2); }
+.s9-sub { font-size: 15px; color: var(--muted); max-width: 520px; line-height: 1.7; margin-bottom: 40px; }
+.s9-cards {
+  display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 40px;
+}
+.s9-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 20px 22px; min-width: 160px; text-align: left;
+}
+.s9-card .sc-ico { font-size: 22px; margin-bottom: 8px; }
+.s9-card .sc-ttl { font-size: 13px; font-weight: 600; color: var(--white); margin-bottom: 4px; }
+.s9-card .sc-dsc { font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+.s9-cost {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--teal-dim); border: 1px solid rgba(29,203,160,0.25);
+  border-radius: 30px; padding: 6px 18px; margin-bottom: 36px;
+  font-size: 13px; font-weight: 600; color: var(--teal);
+}
+.s9-contacts { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
+.s9-contact {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--muted);
+}
+.s9-contact .ico { font-size: 16px; }
+.s9-contact span { color: var(--text); }
+
+/* ── PDF ── */
+.pdf-btn {
+  position: fixed; bottom: 72px; right: 24px; z-index: 200;
+  background: rgba(255,255,255,0.06); border: 1px solid var(--border2);
+  color: var(--muted); font-family: 'Inter', sans-serif; font-size: 11px;
+  padding: 7px 14px; border-radius: 20px; cursor: pointer;
+  transition: all 0.2s;
+}
+.pdf-btn:hover { background: rgba(108,99,255,0.15); border-color: rgba(108,99,255,0.3); color: var(--accent2); }
+
+/* ── FULLSCREEN BTN ── */
+.fs-btn {
+  position: fixed; bottom: 72px; left: 24px; z-index: 200;
+  background: rgba(255,255,255,0.06); border: 1px solid var(--border2);
+  color: var(--muted); font-size: 14px; width: 34px; height: 34px;
+  border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.fs-btn:hover { background: rgba(108,99,255,0.15); border-color: rgba(108,99,255,0.3); color: var(--accent2); }
+
+/* ── PRINT ── */
+@media print {
+  html, body { overflow: visible; height: auto; }
+  #deck { height: auto; overflow: visible; }
+  #nav-bar, #progress-bar, .pdf-btn, .fs-btn { display: none !important; }
+  .slide { position: relative; opacity: 1 !important; transform: none !important; pointer-events: all; page-break-after: always; height: 100vh; }
+  .slide::before { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<div id="deck">
+
+  <!-- ══════════════════════════════════
+       SLIDE 1 · PORTADA
+  ══════════════════════════════════ -->
+  <div class="slide" id="s1">
+    <div class="blob blob-purple" style="width:600px;height:600px;top:-150px;right:-100px;opacity:0.6;"></div>
+    <div class="blob blob-teal"   style="width:300px;height:300px;bottom:50px;left:10%;opacity:0.5;"></div>
+    <div class="slide-inner">
+      <div class="s-topbar">
+        <div class="s-brand">Ryne<span>x</span></div>
+        <div class="s-slide-num" id="sn-1">01 / 09</div>
+      </div>
+      <div class="s1-content">
+        <div class="s1-eyebrow anim-1">
+          <span class="s1-tag tag-accent">Consultoría Tecnológica</span>
+          <span class="s1-tag tag-teal">Automatización RPA</span>
+          <span class="s1-tag tag-muted">Soporte y Optimización</span>
+        </div>
+        <div class="s1-title anim-2">
+          Transformamos<br>procesos. <span class="hl">Impulsamos</span><br>eficiencia.
+        </div>
+        <p class="s1-sub anim-3">
+          Aseguramos continuidad. Trabajamos junto a las organizaciones en todo el ciclo de vida de la automatización — desde el diseño hasta la operación diaria.
+        </p>
+        <div class="s1-kpis anim-4">
+          <div class="s1-kpi">
+            <div class="k-num t">5</div>
+            <div class="k-lbl">Servicios especializados</div>
+          </div>
+          <div class="s1-divider"></div>
+          <div class="s1-kpi">
+            <div class="k-num a">RPA</div>
+            <div class="k-lbl">Automatización inteligente</div>
+          </div>
+          <div class="s1-divider"></div>
+          <div class="s1-kpi">
+            <div class="k-num">360°</div>
+            <div class="k-lbl">Visibilidad de procesos</div>
+          </div>
+          <div class="s1-divider"></div>
+          <div class="s1-kpi">
+            <div class="k-num t">$0</div>
+            <div class="k-lbl">Reunión inicial</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="s1-geo"></div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       SLIDE 2 · SOBRE NOSOTROS
+  ══════════════════════════════════ -->
+  <div class="slide" id="s2">
+    <div class="blob blob-purple" style="width:400px;height:400px;top:-80px;left:-80px;opacity:0.4;"></div>
+    <div class="slide-inner">
+      <div class="s-topbar">
+        <div class="s-brand">Ryne<span>x</span></div>
+        <div class="s-slide-num">02 / 09</div>
+      </div>
+      <div class="s2-layout">
+        <div class="s2-left">
+          <div class="s2-label anim-1">Sobre nosotros</div>
+          <div class="s2-heading anim-2">Automatización<br>con mirada <em>operativa.</em></div>
+          <p class="s2-body anim-3">
+            En Rynex ayudamos a las organizaciones a diseñar, automatizar y operar procesos críticos de negocio, asegurando que la tecnología no solo se implemente — sino que funcione de forma estable, visible y sostenible en el tiempo.
+            <br><br>
+            Trabajamos tanto con procesos que aún no han sido automatizados, como con automatizaciones existentes que requieren ser estabilizadas o mejoradas.
+            <br><br>
+            No solo implementamos soluciones: las diseñamos, las ponemos en producción, las operamos y las hacemos evolucionar.
+          </p>
+        </div>
+        <div class="s2-right">
+          <div class="s2-pill anim-2">
+            <div class="p-ico">🎯</div>
+            <div>
+              <div class="p-ttl">Propósito</div>
+              <div class="p-dsc">Evitar que la automatización sea un proyecto aislado y transformarla en una capacidad real del negocio.</div>
+            </div>
+          </div>
+          <div class="s2-pill anim-3">
+            <div class="p-ico">🤝</div>
+            <div>
+              <div class="p-ttl">Enfoque</div>
+              <div class="p-dsc">Criterio operativo, metodología y acompañamiento directo — entendiendo el proceso, la tecnología y la realidad diaria.</div>
+            </div>
+          </div>
+          <div class="s2-pill anim-4">
+            <div class="p-ico">♾️</div>
+            <div>
+              <div class="p-ttl">Ciclo completo</div>
+              <div class="p-dsc">Rynex actúa como socio especializado en todo el ciclo de vida: diseño → implementación → operación → evolución.</div>
+            </div>
+          </div>
+          <div class="s2-pill anim-5">
+            <div class="p-ico">📊</div>
+            <div>
+              <div class="p-ttl">Control desde el día 1</div>
+              <div class="p-dsc">Automatizamos con visibilidad operativa y de control desde el primer momento, no como un añadido posterior.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       SLIDE 3 · SERVICIOS OVERVIEW
+  ══════════════════════════════════ -->
+  <div class="slide" id="s3">
+    <div class="blob blob-teal" style="width:350px;height:350px;bottom:-80px;right:-60px;opacity:0.4;"></div>
+    <div class="slide-inner">
+      <div class="s-topbar">
+        <div class="s-brand">Ryne<span>x</span></div>
+        <div class="s-slide-num">03 / 09</div>
+      </div>
+      <div class="s3-layout">
+        <div class="s3-head">
+          <div class="s3-label anim-1">Nuestros servicios</div>
+          <div class="s3-title anim-2">5 pilares para <em>automatizar</em> y operar tu negocio</div>
+        </div>
+        <div class="s3-grid anim-3">
+          <div class="s3-card" style="animation-delay:0.1s">
+            <div class="s3-num">01</div>
+            <div class="s3-ico">🔍</div>
+            <div class="s3-name">Levantamiento de Procesos</div>
+            <div class="s3-desc">Analizamos, estructuramos y diseñamos procesos identificando oportunidades de mejora y automatización.</div>
+          </div>
+          <div class="s3-card" style="animation-delay:0.18s">
+            <div class="s3-num">02</div>
+            <div class="s3-ico">🤖</div>
+            <div class="s3-name">Automatización RPA</div>
+            <div class="s3-desc">Diseñamos e implementamos nuevas automatizaciones o reactivamos las existentes con foco en estabilidad.</div>
+          </div>
+          <div class="s3-card" style="animation-delay:0.26s">
+            <div class="s3-num">03</div>
+            <div class="s3-ico">🛡️</div>
+            <div class="s3-name">Soporte TI y Operación Digital</div>
+            <div class="s3-desc">Aseguramos continuidad operativa gestionando incidencias y monitoreando automatizaciones en producción.</div>
+          </div>
+          <div class="s3-card" style="animation-delay:0.34s">
+            <div class="s3-num">04</div>
+            <div class="s3-ico">📊</div>
+            <div class="s3-name">Reportería y Visualización 360°</div>
+            <div class="s3-desc">Entregamos visibilidad ejecutiva consolidando información desde sistemas sin reportería adecuada.</div>
+          </div>
+          <div class="s3-card" style="animation-delay:0.42s">
+            <div class="s3-num">05</div>
+            <div class="s3-ico">⚡</div>
+            <div class="s3-name">Desarrollos a Medida</div>
+            <div class="s3-desc">Creamos aplicaciones web, SaaS y automatizaciones personalizadas adaptadas a sus necesidades.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       SLIDE 4 · LEVANTAMIENTO
+  ══════════════════════════════════ -->
+  <div class="slide" id="s4">
+    <div class="blob blob-purple" style="width:500px;height:500px;top:-100px;right:-100px;opacity:0.35;"></div>
+    <div class="slide-inner">
+      <div class="s-topbar">
+        <div class="s-brand">Ryne<span>x</span></div>
+        <div class="s-slide-num">04 / 09</div>
+      </div>
+      <div class="svc-layout">
+        <div class="svc-left">
+          <div class="svc-num-big anim-fade">01</div>
+          <span class="svc-badge tag-accent anim-1">Servicio 01</span>
+          <div class="svc-title anim-2">Levantamiento<br>de <em style="color:var(--accent2)">Procesos</em></div>
+          <p class="svc-intro anim-3">Analizamos y estructuramos procesos de negocio, identificando oportunidades de mejora y automatización con foco operativo y de control.</p>
+          <div class="svc-deliverables anim-4">
+            <strong>Entregables:</strong> Documentación · Mapas AS-IS/TO-BE · Recomendaciones · Ficha de factibilidad
+          </div>
+        </div>
+        <div class="svc-right">
+          <div class="svc-col anim-2">
+            <div class="svc-col-label">¿Qué hacemos?</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);color:var(--accent2);">✓</div>Analizamos procesos manuales o parcialmente automatizados</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);color:var(--accent2);">✓</div>Identificamos flujos, reglas, dependencias y puntos críticos</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);color:var(--accent2);">✓</div>Definimos escenarios de mejora con foco en eficiencia y control</div>
+          </div>
+          <div class="svc-col anim-3">
+            <div class="svc-col-label">¿Cómo lo hacemos?</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(29,203,160,0.1);border:1px solid rgba(29,203,160,0.25);color:var(--teal);">✓</div>Trabajo colaborativo con áreas de negocio</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(29,203,160,0.1);border:1px solid rgba(29,203,160,0.25);color:var(--teal);">✓</div>Metodología de levantamiento estructurado</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(29,203,160,0.1);border:1px solid rgba(29,203,160,0.25);color:var(--teal);">✓</div>Enfoque en operación real y trazabilidad del proceso</div>
+          </div>
+          <div class="svc-col anim-4">
+            <div class="svc-col-label">¿Qué se logra?</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted);">✓</div>Visibilidad completa del proceso</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted);">✓</div>Base sólida para decisiones de mejora</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted);">✓</div>Reducción de riesgos antes de implementar</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       SLIDE 5 · AUTOMATIZACIÓN RPA
+  ══════════════════════════════════ -->
+  <div class="slide" id="s5">
+    <div class="blob blob-teal" style="width:450px;height:450px;bottom:-100px;left:-80px;opacity:0.35;"></div>
+    <div class="slide-inner">
+      <div class="s-topbar">
+        <div class="s-brand">Ryne<span>x</span></div>
+        <div class="s-slide-num">05 / 09</div>
+      </div>
+      <div class="svc-layout">
+        <div class="svc-left">
+          <div class="svc-num-big anim-fade">02</div>
+          <span class="svc-badge tag-teal anim-1">Servicio 02</span>
+          <div class="svc-title anim-2">Automatización<br><em style="color:var(--teal)">RPA</em></div>
+          <p class="svc-intro anim-3">Diseñamos e implementamos nuevas automatizaciones o reactivamos procesos detenidos, asegurando estabilidad y alineación operativa desde el primer día.</p>
+          <div class="svc-deliverables anim-4">
+            <strong>Entregables:</strong> Automatización operativa · Documentación funcional · Informe de implementación · Capacitación
+          </div>
+        </div>
+        <div class="svc-right">
+          <div class="svc-col anim-2">
+            <div class="svc-col-label">¿Qué hacemos?</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(29,203,160,0.1);border:1px solid rgba(29,203,160,0.25);color:var(--teal);">✓</div>Diseñamos e implementamos nuevas automatizaciones</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(29,203,160,0.1);border:1px solid rgba(29,203,160,0.25);color:var(--teal);">✓</div>Reactivamos automatizaciones detenidas o inestables</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(29,203,160,0.1);border:1px solid rgba(29,203,160,0.25);color:var(--teal);">✓</div>Optimizamos automatizaciones existentes</div>
+          </div>
+          <div class="svc-col anim-3">
+            <div class="svc-col-label">¿Cómo lo hacemos?</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);color:var(--accent2);">✓</div>Diseño funcional previo a la automatización</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);color:var(--accent2);">✓</div>Pruebas controladas antes de producción</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);color:var(--accent2);">✓</div>Puesta en marcha gradual validada con el negocio</div>
+          </div>
+          <div class="svc-col anim-4">
+            <div class="svc-col-label">¿Qué se logra?</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted);">✓</div>Reducción de tareas manuales y errores</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted);">✓</div>Recuperación de automatizaciones críticas</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted);">✓</div>Continuidad y estabilidad de procesos</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       SLIDE 6 · SOPORTE TI
+  ══════════════════════════════════ -->
+  <div class="slide" id="s6">
+    <div class="blob blob-purple" style="width:400px;height:400px;top:-60px;right:-60px;opacity:0.3;"></div>
+    <div class="slide-inner">
+      <div class="s-topbar">
+        <div class="s-brand">Ryne<span>x</span></div>
+        <div class="s-slide-num">06 / 09</div>
+      </div>
+      <div class="svc-layout">
+        <div class="svc-left">
+          <div class="svc-num-big anim-fade">03</div>
+          <span class="svc-badge tag-accent anim-1">Servicio 03</span>
+          <div class="svc-title anim-2">Soporte TI y<br><em style="color:var(--accent2)">Operación Digital</em></div>
+          <p class="svc-intro anim-3">Aseguramos la continuidad operativa de los procesos digitales del negocio, abordando incidencias técnicas con enfoque correctivo y preventivo.</p>
+          <div class="svc-deliverables anim-4">
+            <strong>Entregables:</strong> Registro de incidencias · Reportes de soporte · Acuerdos de nivel de atención (SLA)
+          </div>
+        </div>
+        <div class="svc-right">
+          <div class="svc-col anim-2">
+            <div class="svc-col-label">¿Qué hacemos?</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);color:var(--accent2);">✓</div>Gestión de incidencias en plataformas y servicios</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);color:var(--accent2);">✓</div>Monitoreo de automatizaciones en producción</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);color:var(--accent2);">✓</div>Mantención y ajustes operativos continuos</div>
+          </div>
+          <div class="svc-col anim-3">
+            <div class="svc-col-label">¿Cómo lo hacemos?</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(29,203,160,0.1);border:1px solid rgba(29,203,160,0.25);color:var(--teal);">✓</div>Atención bajo protocolos definidos</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(29,203,160,0.1);border:1px solid rgba(29,203,160,0.25);color:var(--teal);">✓</div>Análisis del impacto en el proceso</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(29,203,160,0.1);border:1px solid rgba(29,203,160,0.25);color:var(--teal);">✓</div>Enfoque correctivo y preventivo con proveedores</div>
+          </div>
+          <div class="svc-col anim-4">
+            <div class="svc-col-label">¿Qué se logra?</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted);">✓</div>Continuidad de procesos críticos</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted);">✓</div>Reducción de tiempos de detención</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted);">✓</div>Mayor estabilidad operacional</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       SLIDE 7 · REPORTERÍA
+  ══════════════════════════════════ -->
+  <div class="slide" id="s7">
+    <div class="blob blob-teal" style="width:500px;height:500px;bottom:-120px;right:-80px;opacity:0.3;"></div>
+    <div class="slide-inner">
+      <div class="s-topbar">
+        <div class="s-brand">Ryne<span>x</span></div>
+        <div class="s-slide-num">07 / 09</div>
+      </div>
+      <div class="svc-layout">
+        <div class="svc-left">
+          <div class="svc-num-big anim-fade">04</div>
+          <span class="svc-badge tag-teal anim-1">Servicio 04</span>
+          <div class="svc-title anim-2">Reportería y<br><em style="color:var(--teal)">Visualización 360°</em></div>
+          <p class="svc-intro anim-3">Entregamos visibilidad ejecutiva y control operativo consolidando información desde sistemas transaccionales que no cuentan con reportería adecuada.</p>
+          <div class="svc-deliverables anim-4">
+            <strong>Entregables:</strong> Dashboard 360° · Definición de KPIs · Reportes ejecutivos · Documentación del modelo
+          </div>
+        </div>
+        <div class="svc-right">
+          <div class="svc-col anim-2">
+            <div class="svc-col-label">¿Qué hacemos?</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(29,203,160,0.1);border:1px solid rgba(29,203,160,0.25);color:var(--teal);">✓</div>Visualizaciones claras, accionables y orientadas al negocio</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(29,203,160,0.1);border:1px solid rgba(29,203,160,0.25);color:var(--teal);">✓</div>Extracción y normalización de datos desde diversas fuentes</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(29,203,160,0.1);border:1px solid rgba(29,203,160,0.25);color:var(--teal);">✓</div>Definición de indicadores críticos (KPIs) por proceso</div>
+          </div>
+          <div class="svc-col anim-3">
+            <div class="svc-col-label">¿Cómo lo hacemos?</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);color:var(--accent2);">✓</div>Entendimiento del proceso operativo y fuentes disponibles</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);color:var(--accent2);">✓</div>Integración automatizada de recolección de información</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);color:var(--accent2);">✓</div>Construcción de vistas ejecutivas validadas con stakeholders</div>
+          </div>
+          <div class="svc-col anim-4">
+            <div class="svc-col-label">¿Qué se logra?</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted);">✓</div>Visibilidad real y centralizada de resultados</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted);">✓</div>Control ejecutivo en tiempo oportuno</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted);">✓</div>Toma de decisiones basada en datos confiables</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       SLIDE 8 · DESARROLLOS A MEDIDA
+  ══════════════════════════════════ -->
+  <div class="slide" id="s8">
+    <div class="blob blob-purple" style="width:450px;height:450px;bottom:-80px;left:-80px;opacity:0.3;"></div>
+    <div class="slide-inner">
+      <div class="s-topbar">
+        <div class="s-brand">Ryne<span>x</span></div>
+        <div class="s-slide-num">08 / 09</div>
+      </div>
+      <div class="svc-layout">
+        <div class="svc-left">
+          <div class="svc-num-big anim-fade">05</div>
+          <span class="svc-badge tag-accent anim-1">Servicio 05</span>
+          <div class="svc-title anim-2">Desarrollos<br><em style="color:var(--accent2)">a Medida</em></div>
+          <p class="svc-intro anim-3">Creamos soluciones tecnológicas exclusivas adaptadas a sus necesidades — desde automatización de procesos hasta plataformas personalizadas que impulsan la eficiencia.</p>
+          <div class="svc-deliverables anim-4">
+            <strong>Entregables:</strong> Solución personalizada · Documentación técnica · Pruebas funcionales · Soporte post-implementación
+          </div>
+        </div>
+        <div class="svc-right">
+          <div class="svc-col anim-2">
+            <div class="svc-col-label">¿Qué hacemos?</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);color:var(--accent2);">✓</div>Desarrollamos soluciones exclusivas adaptadas a sus necesidades</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);color:var(--accent2);">✓</div>Integramos sistemas y plataformas heterogéneas</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);color:var(--accent2);">✓</div>Creamos aplicaciones web, SaaS y automatizaciones personalizadas</div>
+          </div>
+          <div class="svc-col anim-3">
+            <div class="svc-col-label">¿Cómo lo hacemos?</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(29,203,160,0.1);border:1px solid rgba(29,203,160,0.25);color:var(--teal);">✓</div>Análisis detallado de requisitos y desafíos</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(29,203,160,0.1);border:1px solid rgba(29,203,160,0.25);color:var(--teal);">✓</div>Metodologías ágiles con entregas incrementales</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(29,203,160,0.1);border:1px solid rgba(29,203,160,0.25);color:var(--teal);">✓</div>Flexibilidad para adaptarse al ritmo del negocio</div>
+          </div>
+          <div class="svc-col anim-4">
+            <div class="svc-col-label">¿Qué se logra?</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted);">✓</div>Sistemas que se adaptan perfectamente a sus necesidades</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted);">✓</div>Eliminación de deficiencias funcionales</div>
+            <div class="svc-item"><div class="chk" style="background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted);">✓</div>Independencia de soluciones genéricas</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       SLIDE 9 · CTA / PRÓXIMO PASO
+  ══════════════════════════════════ -->
+  <div class="slide" id="s9">
+    <div class="blob blob-purple" style="width:600px;height:600px;top:-150px;left:-100px;opacity:0.5;"></div>
+    <div class="blob blob-teal"   style="width:400px;height:400px;bottom:-100px;right:-60px;opacity:0.4;"></div>
+    <div class="slide-inner">
+      <div class="s-topbar">
+        <div class="s-brand">Ryne<span>x</span></div>
+        <div class="s-slide-num">09 / 09</div>
+      </div>
+      <div class="s9-layout">
+        <div class="s9-eyebrow anim-1">Próximo paso</div>
+        <div class="s9-title anim-2">El primer paso<br>es <em>conversar.</em></div>
+        <p class="s9-sub anim-3">Cada organización enfrenta desafíos distintos. Antes de proponer una solución, queremos entender su contexto, procesos y prioridades.</p>
+        <div class="s9-cost anim-3">✦ &nbsp;Reunión inicial sin costo · Sin compromiso</div>
+        <div class="s9-cards anim-4">
+          <div class="s9-card">
+            <div class="sc-ico">🔍</div>
+            <div class="sc-ttl">Reunión de evaluación</div>
+            <div class="sc-dsc">Análisis de su situación actual sin ningún costo.</div>
+          </div>
+          <div class="s9-card">
+            <div class="sc-ico">🗺️</div>
+            <div class="sc-ttl">Diagnóstico personalizado</div>
+            <div class="sc-dsc">Orientación sobre el mejor camino para su operación.</div>
+          </div>
+          <div class="s9-card">
+            <div class="sc-ico">🤝</div>
+            <div class="sc-ttl">Acompañamiento dedicado</div>
+            <div class="sc-dsc">Desde el primer día trabajamos junto a su equipo.</div>
+          </div>
+        </div>
+        <div class="s9-contacts anim-5">
+          <div class="s9-contact"><span class="ico">✉</span><span>contacto@rynex.cl</span></div>
+          <div class="s9-contact"><span class="ico">📞</span><span>+56 999 848 964</span></div>
+          <div class="s9-contact"><span class="ico">🌐</span><span>rynex.cl</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- NAVIGATION -->
+<div id="nav-bar">
+  <button class="nav-btn-prev" onclick="prevSlide()">←</button>
+  <div class="nav-dots" id="dots"></div>
+  <button class="nav-btn-next" onclick="nextSlide()">→</button>
+</div>
+
+<button class="pdf-btn" onclick="exportPDF()">⬇ PDF</button>
+<button class="fs-btn"  onclick="toggleFS()"  title="Pantalla completa">⛶</button>
+
+<script>
+const TOTAL = 9;
+let current = 0;
+let animating = false;
+
+// BUILD DOTS
+const dotsEl = document.getElementById('dots');
+for (let i = 0; i < TOTAL; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 0 ? ' active' : '');
+  d.onclick = () => goTo(i);
+  dotsEl.appendChild(d);
+}
+
+function restartAnimations(slide) {
+  // Force reflow to restart CSS animations without cloning
+  const animated = slide.querySelectorAll('[class*="anim-"]');
+  animated.forEach(el => {
+    el.style.animation = 'none';
+    el.offsetHeight; // trigger reflow
+    el.style.animation = '';
+  });
+}
+
+function goTo(idx) {
+  if (idx < 0 || idx >= TOTAL || animating) return;
+  if (idx === current) return;
+  animating = true;
+
+  const slides = document.querySelectorAll('.slide');
+  const prev = slides[current];
+  const next = slides[idx];
+  const goingForward = idx > current;
+
+  // Hide current
+  prev.classList.remove('active');
+  prev.classList.add('exit');
+
+  // Prepare next: set initial transform direction
+  next.style.transition = 'none';
+  next.style.opacity = '0';
+  next.style.transform = goingForward ? 'translateX(60px)' : 'translateX(-60px)';
+  next.style.pointerEvents = 'none';
+
+  // Force reflow before transitioning in
+  next.offsetHeight;
+
+  // Restore transition and animate in
+  next.style.transition = '';
+  next.style.opacity = '';
+  next.style.transform = '';
+  next.style.pointerEvents = '';
+  next.classList.add('active');
+
+  // Restart inner animations
+  restartAnimations(next);
+
+  // Cleanup previous slide after transition
+  setTimeout(() => {
+    prev.classList.remove('exit');
+    prev.style.transition = 'none';
+    prev.style.opacity = '0';
+    prev.style.transform = goingForward ? 'translateX(-60px)' : 'translateX(60px)';
+    prev.offsetHeight;
+    prev.style.transition = '';
+    animating = false;
+  }, 560);
+
+  current = idx;
+  updateUI();
+}
+
+function updateUI() {
+  document.querySelectorAll('.dot').forEach((d, i) => {
+    d.classList.toggle('active', i === current);
+  });
+  const pct = ((current + 1) / TOTAL) * 100;
+  document.getElementById('progress-bar').style.width = pct + '%';
+}
+
+function nextSlide() { goTo(current + 1); }
+function prevSlide() { goTo(current - 1); }
+
+// KEYBOARD
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    { e.preventDefault(); prevSlide(); }
+});
+
+// SWIPE
+let tx = 0;
+document.getElementById('deck').addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive: true });
+document.getElementById('deck').addEventListener('touchend',   e => {
+  const dx = e.changedTouches[0].clientX - tx;
+  if (Math.abs(dx) > 50) dx < 0 ? nextSlide() : prevSlide();
+}, { passive: true });
+
+// FULLSCREEN
+function toggleFS() {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+  else document.exitFullscreen?.();
+}
+
+// PDF
+function exportPDF() {
+  const slides = document.querySelectorAll('.slide');
+  slides.forEach(s => {
+    s.style.transition  = 'none';
+    s.style.opacity     = '1';
+    s.style.transform   = 'none';
+    s.style.pointerEvents = 'all';
+    s.style.position    = 'relative';
+    s.style.height      = '100vh';
+  });
+  document.querySelector('.pdf-btn').style.display = 'none';
+  document.querySelector('.fs-btn').style.display  = 'none';
+  document.getElementById('nav-bar').style.display = 'none';
+  window.print();
+  setTimeout(() => {
+    document.querySelector('.pdf-btn').style.display = '';
+    document.querySelector('.fs-btn').style.display  = '';
+    document.getElementById('nav-bar').style.display = '';
+    slides.forEach((s, i) => {
+      s.style.transition    = '';
+      s.style.position      = '';
+      s.style.height        = '';
+      s.style.pointerEvents = '';
+      if (i !== current) {
+        s.style.opacity   = '0';
+        s.style.transform = 'translateX(60px)';
+      } else {
+        s.style.opacity   = '';
+        s.style.transform = '';
+      }
+    });
+  }, 1500);
+}
+
+// INIT — show first slide cleanly
+const allSlides = document.querySelectorAll('.slide');
+allSlides.forEach((s, i) => {
+  s.style.transition = 'none';
+  s.style.opacity    = '0';
+  s.style.transform  = 'translateX(60px)';
+});
+allSlides[0].style.opacity   = '1';
+allSlides[0].style.transform = 'translateX(0)';
+allSlides[0].classList.add('active');
+// Re-enable transitions after first paint
+setTimeout(() => allSlides.forEach(s => { s.style.transition = ''; }), 50);
+updateUI();
+</script>
+</body>
+</html>
