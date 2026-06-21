@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Propuesta Rynex · Rupanco S.A. · v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ================================================================
+   CONFIG — EDITA AQUÍ
+   ================================================================ */
+:root {
+  --rynex-dark:        #0a0a0f;
+  --rynex-surface:     #1a1a26;
+  --rynex-surface2:    #141422;
+  --rynex-border:      rgba(255,255,255,0.07);
+  --rynex-border2:     rgba(255,255,255,0.13);
+  --rynex-accent:      #6c63ff;
+  --rynex-accent2:     #9b95ff;
+  --rynex-accent-glow: rgba(108,99,255,0.15);
+  --rynex-teal:        #1dcba0;
+  --rynex-teal-dim:    rgba(29,203,160,0.1);
+  --rynex-white:       #ffffff;
+  --rynex-muted:       rgba(255,255,255,0.52);
+  --rynex-muted2:      rgba(255,255,255,0.3);
+  --rynex-text:        rgba(255,255,255,0.87);
+  --sidebar-w:         260px;
+  --radius:            12px;
+  --radius-sm:         8px;
+}
+
+/* ── RESET ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--rynex-dark); color: var(--rynex-text);
+  font-size: 15px; line-height: 1.7; min-height: 100vh;
+}
+
+/* ================================================================
+   LOGIN
+   ================================================================ */
+#login-screen {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #07070f 0%, #12103a 60%, #07070f 100%);
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+#login-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+.login-glow { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.login-glow::before {
+  content: ''; position: absolute; width: 700px; height: 700px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(108,99,255,0.12) 0%, transparent 70%);
+  top: -200px; right: -150px;
+}
+.login-card {
+  position: relative; z-index: 1;
+  background: rgba(255,255,255,0.04); backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,0.09); border-radius: 20px;
+  padding: 48px 44px; width: 100%; max-width: 400px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+}
+.login-brand {
+  font-family: 'Space Grotesk', sans-serif; font-size: 2rem; font-weight: 700;
+  color: var(--rynex-white); text-align: center; letter-spacing: -1px; margin-bottom: 4px;
+}
+.login-brand span { color: var(--rynex-accent2); }
+.login-tagline { text-align: center; font-size: 11px; color: rgba(255,255,255,0.28); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 32px; }
+.login-divider { height: 1px; background: var(--rynex-border); margin-bottom: 26px; }
+.login-field { margin-bottom: 14px; }
+.login-field label { display: block; font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.35); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 7px; }
+.login-field input {
+  width: 100%; padding: 11px 14px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 7px; color: var(--rynex-white); font-family: 'Inter', sans-serif; font-size: 14px;
+  outline: none; transition: border-color 0.2s, background 0.2s;
+}
+.login-field input:focus { border-color: var(--rynex-accent); background: rgba(108,99,255,0.07); }
+.login-field input::placeholder { color: rgba(255,255,255,0.18); }
+#login-error { font-size: 12px; color: #f87171; text-align: center; margin-bottom: 10px; display: none; }
+.btn-login {
+  width: 100%; padding: 12px; background: var(--rynex-accent); border: none; border-radius: 7px;
+  color: #fff; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: background 0.2s, transform 0.15s; margin-top: 4px;
+}
+.btn-login:hover { background: #7c74ff; transform: translateY(-1px); }
+.login-hint { text-align: center; margin-top: 18px; font-size: 11px; color: rgba(255,255,255,0.18); }
+
+/* ================================================================
+   APP LAYOUT
+   ================================================================ */
+#app { display: flex; min-height: 100vh; opacity: 0; transition: opacity 0.5s; }
+#app.visible { opacity: 1; }
+
+/* ── SIDEBAR ── */
+#sidebar {
+  width: var(--sidebar-w); background: #0d0d18;
+  border-right: 1px solid var(--rynex-border);
+  position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+  display: flex; flex-direction: column; overflow-y: auto;
+  transition: transform 0.25s cubic-bezier(.4,0,.2,1);
+}
+.sidebar-header { padding: 22px 20px 16px; border-bottom: 1px solid var(--rynex-border); flex-shrink: 0; }
+.sidebar-brand { font-family: 'Space Grotesk', sans-serif; font-size: 1.3rem; font-weight: 700; color: var(--rynex-white); letter-spacing: -0.3px; }
+.sidebar-brand span { color: var(--rynex-accent2); }
+.sidebar-tagline { font-size: 9px; color: rgba(255,255,255,0.25); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+.sidebar-client { margin-top: 12px; background: var(--rynex-accent-glow); border: 1px solid rgba(108,99,255,0.2); border-radius: 6px; padding: 7px 10px; }
+.sidebar-client small { display: block; font-size: 9px; color: rgba(255,255,255,0.28); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px; }
+.sidebar-client span { font-size: 12px; color: var(--rynex-accent2); font-weight: 500; }
+.sidebar-version { margin-top: 6px; font-size: 9px; color: rgba(255,255,255,0.2); }
+
+nav#main-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+nav#main-nav ul { list-style: none; }
+.nav-group-label { padding: 12px 20px 5px; font-size: 9px; font-weight: 600; color: rgba(255,255,255,0.18); letter-spacing: 2px; text-transform: uppercase; }
+.nav-btn {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 8px 20px;
+  background: none; border: none; border-left: 2px solid transparent;
+  color: rgba(255,255,255,0.45); font-family: 'Inter', sans-serif; font-size: 13px;
+  cursor: pointer; text-align: left;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+.nav-btn:hover { color: var(--rynex-white); background: rgba(255,255,255,0.04); }
+.nav-btn.active { color: var(--rynex-white); background: rgba(108,99,255,0.1); border-left-color: var(--rynex-accent); }
+.nav-btn .n-ico { font-size: 14px; min-width: 18px; text-align: center; }
+.nav-btn .n-num { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.18); background: rgba(255,255,255,0.05); border-radius: 4px; padding: 1px 5px; margin-left: auto; font-family: 'Space Grotesk', sans-serif; }
+.nav-btn.active .n-num { background: rgba(108,99,255,0.22); color: var(--rynex-accent2); }
+
+.sidebar-footer { padding: 12px 20px; border-top: 1px solid var(--rynex-border); flex-shrink: 0; }
+#sidebar-user { font-size: 11px; color: rgba(255,255,255,0.28); margin-bottom: 7px; }
+.btn-logout { width: 100%; padding: 7px; background: rgba(255,255,255,0.04); border: 1px solid var(--rynex-border); border-radius: 6px; color: rgba(255,255,255,0.3); font-family: 'Inter', sans-serif; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+.btn-logout:hover { background: rgba(248,113,113,0.08); border-color: rgba(248,113,113,0.2); color: #f87171; }
+
+/* ── MAIN ── */
+#main-content { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(10,10,15,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rynex-border);
+  padding: 0 2.5rem; height: 54px;
+  display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+}
+.topbar-left { display: flex; align-items: center; gap: 10px; }
+.mobile-toggle { display: none; background: none; border: none; color: var(--rynex-white); font-size: 20px; cursor: pointer; }
+.topbar-section { font-size: 13px; color: var(--rynex-muted); }
+.topbar-section strong { color: var(--rynex-white); }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.tb-badge { font-size: 9px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; background: rgba(108,99,255,0.13); border: 1px solid rgba(108,99,255,0.28); color: var(--rynex-accent2); padding: 3px 10px; border-radius: 20px; }
+.tb-v2 { font-size: 9px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; background: var(--rynex-teal-dim); border: 1px solid rgba(29,203,160,0.22); color: var(--rynex-teal); padding: 3px 10px; border-radius: 20px; }
+.tb-date { font-size: 11px; color: var(--rynex-muted2); }
+
+/* ── PAGES ── */
+.page { display: none; padding: 2.5rem; max-width: 860px; }
+.page.active { display: block; }
+
+/* ── PDF FAB ── */
+.pdf-fab {
+  position: fixed; bottom: 2rem; right: 2rem;
+  background: var(--rynex-accent); color: #fff; border: none;
+  border-radius: 40px; padding: 11px 20px;
+  font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; gap: 7px;
+  box-shadow: 0 4px 24px rgba(108,99,255,0.3); z-index: 200;
+  transition: background 0.2s, transform 0.15s;
+}
+.pdf-fab:hover { background: #7c74ff; transform: translateY(-2px); }
+
+/* ================================================================
+   COMPONENTES
+   ================================================================ */
+.page-eyebrow { font-size: 10px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: var(--rynex-teal); margin-bottom: 10px; }
+.page-title { font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; color: var(--rynex-white); letter-spacing: -0.4px; line-height: 1.2; margin-bottom: 8px; }
+.page-title em { font-style: normal; color: var(--rynex-accent2); }
+.page-desc { font-size: 14px; color: var(--rynex-muted); max-width: 580px; line-height: 1.6; margin-bottom: 1.8rem; }
+.page-divider { height: 1px; background: var(--rynex-border); margin-bottom: 1.8rem; }
+.subsection-title { font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; color: var(--rynex-white); margin: 1.5rem 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--rynex-border); }
+
+.card { background: var(--rynex-surface); border: 1px solid var(--rynex-border); border-radius: var(--radius); padding: 1.3rem; margin-bottom: 1rem; }
+.card-accent { border-left: 2px solid var(--rynex-accent); border-radius: 0 var(--radius) var(--radius) 0; }
+.card-teal   { border-left: 2px solid var(--rynex-teal);   border-radius: 0 var(--radius) var(--radius) 0; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; }
+
+.badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 9px; border-radius: 20px; }
+.badge-accent { background: rgba(108,99,255,0.13); border: 1px solid rgba(108,99,255,0.28); color: var(--rynex-accent2); }
+.badge-teal   { background: var(--rynex-teal-dim); border: 1px solid rgba(29,203,160,0.22); color: var(--rynex-teal); }
+.badge-muted  { background: rgba(255,255,255,0.05); border: 1px solid var(--rynex-border2); color: var(--rynex-muted); }
+
+.callout { border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; line-height: 1.6; margin-top: 1rem; }
+.callout-accent { background: var(--rynex-accent-glow); border: 1px solid rgba(108,99,255,0.22); color: var(--rynex-accent2); }
+.callout-teal   { background: var(--rynex-teal-dim);    border: 1px solid rgba(29,203,160,0.22); color: var(--rynex-teal); }
+
+.stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--rynex-border); border: 1px solid var(--rynex-border); border-radius: var(--radius); overflow: hidden; margin-bottom: 2rem; }
+.stat-cell { background: var(--rynex-surface); padding: 1.1rem 1rem; text-align: center; }
+.stat-cell .s-num { font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: var(--rynex-white); line-height: 1; margin-bottom: 4px; }
+.stat-cell .s-num.a { color: var(--rynex-accent2); }
+.stat-cell .s-num.t { color: var(--rynex-teal); }
+.stat-cell .s-lbl { font-size: 11px; color: var(--rynex-muted); line-height: 1.3; }
+
+.check-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.check-list li { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; }
+.ck { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; font-size: 9px; }
+.ck-ok  { background: var(--rynex-teal-dim); border: 1px solid rgba(29,203,160,0.28); color: var(--rynex-teal); }
+.ck-err { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.28); color: #f87171; }
+
+/* FASE */
+.fase-wrap { display: flex; flex-direction: column; gap: 8px; }
+.fase-row  { display: flex; gap: 14px; align-items: flex-start; }
+.fase-num-col { display: flex; flex-direction: column; align-items: center; min-width: 32px; }
+.fase-circle { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; background: var(--rynex-accent-glow); border: 1px solid rgba(108,99,255,0.32); display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 700; color: var(--rynex-accent2); }
+.fase-line { width: 1px; flex: 1; min-height: 14px; background: var(--rynex-border2); margin: 3px 0; }
+.fase-body { background: var(--rynex-surface); border: 1px solid var(--rynex-border); border-radius: var(--radius-sm); padding: .9rem 1.1rem; flex: 1; margin-bottom: 4px; }
+.fase-body h4 { font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; color: var(--rynex-white); margin-bottom: 6px; }
+.fase-body ul { list-style: none; display: flex; flex-direction: column; gap: 3px; }
+.fase-body ul li { font-size: 12px; color: var(--rynex-muted); display: flex; gap: 6px; }
+.fase-body ul li::before { content: '·'; color: var(--rynex-teal); flex-shrink: 0; }
+
+/* TABLE */
+.tbl { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--rynex-surface); border: 1px solid var(--rynex-border); border-radius: var(--radius); overflow: hidden; }
+.tbl th { text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--rynex-muted2); background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--rynex-border); }
+.tbl td { padding: 11px 14px; border-bottom: 1px solid var(--rynex-border); color: var(--rynex-text); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tbody tr:hover td { background: rgba(255,255,255,0.02); }
+
+/* INV */
+.inv-hero { background: var(--rynex-surface); border: 1px solid var(--rynex-border); border-radius: var(--radius); padding: 1.8rem 2rem; display: flex; align-items: center; justify-content: space-between; gap: 2rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.inv-price { font-family: 'Space Grotesk', sans-serif; font-size: 48px; font-weight: 700; color: var(--rynex-white); line-height: 1; letter-spacing: -2px; }
+.inv-price span { font-size: 20px; color: var(--rynex-accent2); font-weight: 500; letter-spacing: 0; }
+.inv-price-lbl { font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--rynex-muted); margin-bottom: 6px; }
+.inv-price-sub { font-size: 11px; color: var(--rynex-muted); margin-top: 5px; }
+.inv-includes { flex: 1; min-width: 200px; }
+.inc-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--rynex-muted); margin-bottom: 5px; }
+.ck-sm { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; background: var(--rynex-teal-dim); border: 1px solid rgba(29,203,160,0.28); display: flex; align-items: center; justify-content: center; font-size: 8px; color: var(--rynex-teal); }
+
+/* OPCIONES PRECIO */
+.precio-opciones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+.precio-card { background: var(--rynex-surface); border: 1px solid var(--rynex-border); border-radius: var(--radius-sm); padding: 1.2rem; }
+.precio-card.recommended { border-color: rgba(29,203,160,0.35); }
+.precio-card .pc-tag { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--rynex-muted2); margin-bottom: 6px; }
+.precio-card.recommended .pc-tag { color: var(--rynex-teal); }
+.precio-card .pc-title { font-size: 14px; font-weight: 600; color: var(--rynex-white); margin-bottom: 4px; }
+.precio-card .pc-desc { font-size: 12px; color: var(--rynex-muted); line-height: 1.5; margin-bottom: 12px; }
+.precio-card .pc-price { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: var(--rynex-accent2); }
+.precio-card.recommended .pc-price { color: var(--rynex-teal); }
+.precio-card .pc-price small { font-size: 12px; font-weight: 400; color: var(--rynex-muted); }
+
+/* ROI */
+.roi-box { background: var(--rynex-teal-dim); border: 1px solid rgba(29,203,160,0.18); border-radius: var(--radius); padding: 1.3rem 1.5rem; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.roi-num { font-family: 'Space Grotesk', sans-serif; font-size: 38px; font-weight: 700; color: var(--rynex-teal); line-height: 1; flex-shrink: 0; }
+.roi-txt { font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.6; }
+
+/* BENE */
+.bene-card { background: var(--rynex-surface); border: 1px solid var(--rynex-border); border-radius: var(--radius-sm); padding: 1.1rem; }
+.bene-card .b-ico { font-size: 20px; margin-bottom: 8px; }
+.bene-card .b-ttl { font-size: 13px; font-weight: 600; color: var(--rynex-white); margin-bottom: 4px; }
+.bene-card .b-dsc { font-size: 12px; color: var(--rynex-muted); line-height: 1.5; }
+
+/* CLAUSULA */
+.clausula { background: var(--rynex-surface); border: 1px solid var(--rynex-border); border-radius: var(--radius-sm); padding: 1rem 1.2rem; display: flex; gap: 14px; margin-bottom: 8px; }
+.cl-num { font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 700; color: var(--rynex-accent2); min-width: 22px; margin-top: 2px; }
+.cl-body strong { display: block; font-size: 13px; font-weight: 600; color: var(--rynex-white); margin-bottom: 2px; }
+.cl-body span   { font-size: 12px; color: var(--rynex-muted); line-height: 1.5; }
+
+/* PASO */
+.paso { display: flex; align-items: center; gap: 12px; background: var(--rynex-surface); border: 1px solid var(--rynex-border); border-radius: var(--radius-sm); padding: .85rem 1.1rem; font-size: 13px; margin-bottom: 8px; }
+.paso.done { background: rgba(29,203,160,0.04); border-color: rgba(29,203,160,0.25); }
+.paso.inprogress { background: rgba(108,99,255,0.06); border-color: rgba(108,99,255,0.25); }
+.p-num { width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,0.05); border: 1px solid var(--rynex-border2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px; color: var(--rynex-muted2); font-family: 'Space Grotesk', sans-serif; font-weight: 600; }
+.paso.done       .p-num { background: var(--rynex-teal-dim); border-color: rgba(29,203,160,0.35); color: var(--rynex-teal); }
+.paso.inprogress .p-num { background: var(--rynex-accent-glow); border-color: rgba(108,99,255,0.35); color: var(--rynex-accent2); }
+.p-txt { color: var(--rynex-text); }
+.paso.done       .p-txt { color: var(--rynex-teal); }
+.paso.inprogress .p-txt { color: var(--rynex-accent2); }
+.p-status { margin-left: auto; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+
+/* CALC */
+.calc-box { background: var(--rynex-surface); border: 1px solid var(--rynex-border); border-radius: var(--radius); padding: 1.2rem; margin-bottom: 1rem; }
+.calc-box h4 { font-size: 12px; color: var(--rynex-muted); margin-bottom: 1rem; }
+.calc-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 7px 0; border-bottom: 1px solid var(--rynex-border); }
+.calc-row:last-child { border-bottom: none; }
+.calc-row .lhs { color: var(--rynex-muted); }
+.calc-row .rhs { font-weight: 500; color: var(--rynex-white); }
+.calc-row.total .lhs { color: var(--rynex-white); font-weight: 600; }
+.calc-row.total .rhs { color: var(--rynex-teal); font-size: 15px; font-weight: 700; font-family: 'Space Grotesk', sans-serif; }
+
+/* RESP */
+.resp-block h4 { font-size: 10px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--rynex-muted2); margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--rynex-border); }
+.resp-item { padding: 8px 0; border-bottom: 1px solid var(--rynex-border); }
+.resp-item:last-child { border-bottom: none; }
+.resp-item .r-role { font-size: 13px; font-weight: 500; color: var(--rynex-white); }
+.resp-item .r-desc { font-size: 12px; color: var(--rynex-muted); }
+
+/* PORTADA */
+.portada-hero { min-height: calc(100vh - 56px - 5rem); display: flex; flex-direction: column; justify-content: center; }
+.portada-kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--rynex-border); border: 1px solid var(--rynex-border); border-radius: var(--radius); overflow: hidden; margin: 1.8rem 0; }
+.kpi-cell { background: var(--rynex-surface); padding: 1rem; text-align: center; }
+.kpi-cell .k-num { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: var(--rynex-white); line-height: 1; margin-bottom: 4px; }
+.kpi-cell .k-num.a { color: var(--rynex-accent2); }
+.kpi-cell .k-num.t { color: var(--rynex-teal); }
+.kpi-cell .k-lbl { font-size: 10px; color: var(--rynex-muted); line-height: 1.3; }
+
+/* DELTA BADGE */
+.delta { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 20px; margin-bottom: 6px; }
+.delta-new { background: var(--rynex-teal-dim); border: 1px solid rgba(29,203,160,0.25); color: var(--rynex-teal); }
+.delta-upd { background: var(--rynex-accent-glow); border: 1px solid rgba(108,99,255,0.22); color: var(--rynex-accent2); }
+
+/* PRINT */
+@media print {
+  #login-screen, #sidebar, .topbar, .pdf-fab, .mobile-toggle { display: none !important; }
+  #main-content { margin-left: 0 !important; }
+  .page { display: block !important; padding: 1.5rem 2rem; max-width: 100%; page-break-after: always; }
+  body { background: #fff; color: #111; }
+  :root {
+    --rynex-dark:#fff; --rynex-surface:#f5f5f8; --rynex-border:rgba(0,0,0,0.09);
+    --rynex-border2:rgba(0,0,0,0.14); --rynex-text:#222; --rynex-white:#000;
+    --rynex-muted:#555; --rynex-muted2:#888; --rynex-accent:#534ab7;
+    --rynex-accent2:#534ab7; --rynex-teal:#0c6e56; --rynex-teal-dim:rgba(12,110,86,0.06);
+    --rynex-accent-glow:rgba(83,74,183,0.06);
+  }
+}
+@media (max-width:768px) {
+  :root { --sidebar-w:0px; }
+  #sidebar { transform:translateX(-260px); width:260px; }
+  #sidebar.open { transform:translateX(0); }
+  #main-content { margin-left:0; }
+  .mobile-toggle { display:block; }
+  .page { padding:1.5rem 1rem; }
+  .stats-row,.portada-kpis,.grid-2,.grid-3,.precio-opciones { grid-template-columns:1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-glow"></div>
+  <div class="login-card">
+    <div class="login-brand">Ryne<span>x</span></div>
+    <div class="login-tagline">Propuesta Comercial</div>
+    <div class="login-divider"></div>
+    <div class="login-field"><label>Usuario</label><input id="inp-user" type="text" placeholder="usuario" autocomplete="username"></div>
+    <div class="login-field"><label>Contraseña</label><input id="inp-pass" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+    <div id="login-error">Usuario o contraseña incorrectos</div>
+    <button class="btn-login" onclick="doLogin()">Ingresar</button>
+    <div class="login-hint">Acceso restringido · Solo destinatarios autorizados</div>
+  </div>
+</div>
+
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">Ryne<span>x</span></div>
+      <div class="sidebar-tagline">www.rynex.cl</div>
+      <div class="sidebar-client">
+        <small>Propuesta para</small>
+        <span>Rupanco S.A.</span>
+      </div>
+      <div class="sidebar-version">Versión 1.0 · Junio 2026</div>
+    </div>
+    <nav id="main-nav"><ul id="nav-list"></ul></nav>
+    <div class="sidebar-footer">
+      <div id="sidebar-user"></div>
+      <button class="btn-logout" onclick="doLogout()">✕ &nbsp;Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div id="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+        <div class="topbar-section"><strong id="topbar-title">Propuesta Comercial</strong></div>
+      </div>
+      <div class="topbar-right">
+        <span class="tb-v2">v1.0 · Post-levantamiento</span>
+        <span class="tb-badge">Confidencial</span>
+        <span class="tb-date">Junio 2026</span>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════
+         PORTADA
+    ══════════════════════════════ -->
+    <section class="page" id="page-portada">
+      <div class="portada-hero">
+        <div class="page-eyebrow">Propuesta Comercial · Rupanco S.A.</div>
+        <div class="page-title">Consulta de estado de<br>servicios básicos. <em>Automatizada.</em></div>
+        <p class="page-desc">Conoce el estado de pago y deuda de los servicios (Enel y Aguas Andinas) de 350 Departamentos de forma recurrente — sin intervención manual y en tiempo oportuno.</p>
+        <div class="portada-kpis">
+          <div class="kpi-cell"><div class="k-num t">-4</div><div class="k-lbl">Días de trabajo manual</div></div>
+          <div class="kpi-cell"><div class="k-num a">350</div><div class="k-lbl">Números de clientes procesados</div></div>
+          <div class="kpi-cell"><div class="k-num">2</div><div class="k-lbl">Portales automatizados</div></div>
+          <div class="kpi-cell"><div class="k-num t">&lt;3m</div><div class="k-lbl">Meses para ROI</div></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <span class="badge badge-teal">Servicio administrado por Rynex</span>
+          <span class="badge badge-accent">Web Scraping RPA</span>
+          <span class="badge badge-muted">Portales: Enel + Aguas Andinas</span>
+          <span class="badge badge-accent">Reporte Excel mensual</span>
+          <span class="badge badge-teal">Frecuencia: 2 veces al mes</span>
+        </div>
+        <div class="callout callout-teal" style="margin-top:1.5rem; max-width:620px;">
+          ✦ <strong>Propuesta actualizada</strong> en base a la sesión de levantamiento del 17-06-2026.
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════
+         QUÉ RESOLVEMOS
+    ══════════════════════════════ -->
+    <section class="page" id="page-problema">
+      <div class="page-eyebrow">Sección 01</div>
+      <div class="page-title">El <em>problema</em> que resolvemos</div>
+      <p class="page-desc">Más de 700 consultas mensuales en dos plataformas distintas, ejecutadas manualmente durante 4 días de trabajo.</p>
+      <div class="page-divider"></div>
+
+      <div class="stats-row">
+        <div class="stat-cell"><div class="s-num a">4</div><div class="s-lbl">Días que dura el proceso manual hoy</div></div>
+        <div class="stat-cell"><div class="s-num t">350</div><div class="s-lbl">Números de clientes a consultar cada mes</div></div>
+        <div class="stat-cell"><div class="s-num">2</div><div class="s-lbl">Portales distintos a revisar</div></div>
+        <div class="stat-cell"><div class="s-num a">0</div><div class="s-lbl">Automatización existente hoy</div></div>
+      </div>
+
+      <div class="card card-accent" style="margin-bottom:1rem;">
+        <p style="font-size:15px;line-height:1.8;">
+          Hoy, conocer el estado de pago de los servicios de los edificios administrados por Rupanco S.A. implica ingresar manualmente a los portales de <strong style="color:var(--rynex-white)">Enel</strong> y <strong style="color:var(--rynex-white)">Aguas Andinas</strong>, revisar suministro por suministro y consolidar esa información.
+        </p>
+      </div>
+
+      <div class="subsection-title">Lo que el proceso manual implica hoy</div>
+      <ul class="check-list">
+        <li><div class="ck ck-err">✕</div>4 días de trabajo operativo para obtener información que debería estar disponible en minutos</li>
+        <li><div class="ck ck-err">✕</div>Ingreso manual a dos portales distintos, número de cliente por número de cliente</li>
+        <li><div class="ck ck-err">✕</div>Riesgo de errores u omisiones en 350 registros mensuales</li>
+        <li><div class="ck ck-err">✕</div>Dependencia de disponibilidad de personas para completar el proceso</li>
+        <li><div class="ck ck-err">✕</div>Sin trazabilidad ni historial del estado de los servicios en el tiempo</li>
+      </ul>
+      <div class="callout callout-accent">
+        Cuando un proceso requiere 4 días de ejecución manual para completar 700 consultas, existe una oportunidad clara de optimización.
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════
+         SOLUCIÓN Y ALCANCE
+    ══════════════════════════════ -->
+    <section class="page" id="page-solucion">
+      <div class="page-eyebrow">Sección 02</div>
+      <div class="page-title"><em>Nuestra</em> propuesta</div>
+      <p class="page-desc">Proceso 100% automatizado, gestionado y administrado por Rynex.</p>
+      <div class="page-divider"></div>
+
+      <div class="card card-teal" style="margin-bottom:1.5rem;">
+        <p style="font-size:14px;line-height:1.8;">
+          Rynex diseña, implementa y <strong style="color:var(--rynex-white)">administra</strong> un proceso automatizado que ingresa a los portales de Enel y Aguas Andinas, consulta el estado de pago de cada Número de cliente asignado y genera un <strong style="color:var(--rynex-white)">Informe en Excel (.xlsx) consolidado</strong> por edificio — listo para usar por el equipo de Rupanco S.A.
+        </p>
+      </div>
+
+      <div class="subsection-title">Alcance definido en sesión de levantamiento</div>
+      <ul class="check-list" style="margin-bottom:1.5rem;">
+        <li><div class="ck ck-ok">✓</div>Consulta de estado de pago/deuda en portal Enel (350 Números de clientes aproximadamente)</li>
+        <li><div class="ck ck-ok">✓</div>Consulta de estado de pago/deuda en portal Aguas Andinas (350 Números de clientes aproximadamente)</li>
+        <li><div class="ck ck-ok">✓</div>Consolidación en Excel con estado por Número de cliente: <em>saldo pendiente</em> o <em>sin deuda</em></li>
+        <li><div class="ck ck-ok">✓</div>Entrega del reporte mensual a Rupanco S.A. por parte de Rynex con frecuencia definida de 2 veces por mes.</li>
+        <li><div class="ck ck-ok">✓</div>Rynex administra el servicio — el cliente solo recibe el resultado en el formato indicado.</li>
+      </ul>
+
+      <div class="callout callout-accent" style="margin-bottom:1.5rem;">
+        ⚠ <strong>Fuera de alcance:</strong> No se descarga ni almacena la factura o boleta desde los portales. El objetivo es exclusivamente conocer el estado de cada servicio asociado al número de cliente indicado.
+      </div>
+
+      <div class="subsection-title">Flujo del servicio mensual: 2 veces por mes</div>
+      <div class="fase-wrap">
+        <div class="fase-row">
+          <div class="fase-num-col"><div class="fase-circle">1</div><div class="fase-line"></div></div>
+          <div class="fase-body"><h4>Ejecución automática del robot</h4>
+            <ul>
+              <li>El robot inicia sesión en portales Enel y Aguas Andinas</li>
+              <li>Consulta el estado de pago de cada Número de cliente asignado</li>
+              <li>Registra el resultado: con deuda / sin deuda</li>
+            </ul>
+          </div>
+        </div>
+        <div class="fase-row">
+          <div class="fase-num-col"><div class="fase-circle">2</div><div class="fase-line"></div></div>
+          <div class="fase-body"><h4>Consolidación del reporte</h4>
+            <ul>
+              <li>La información se consolida automáticamente en el archivo Excel</li>
+              <li>Organizado por edificio y proveedor de servicio (Enel - Aguas Andinas)</li>
+              <li>Revisión de calidad por parte de Rynex antes de la entrega</li>
+            </ul>
+        </div>
+        </div>
+        <div class="fase-row">
+          <div class="fase-num-col"><div class="fase-circle">3</div></div>
+          <div class="fase-body"><h4>Entrega a Rupanco S.A.</h4>
+            <ul>
+              <li>Reporte enviado por correo a los destinatarios designados por Rupanco S.A.</li>
+              <li>Frecuencia: 2 veces al mes (días 05 y 15 de cada mes)</li>
+              <li>Continuidad operativa de un proceso automatizado para la consulta de estado de cuenta del pago de servicios básicos: Enel y Aguas Andinas</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════
+         CRONOGRAMA
+    ══════════════════════════════ -->
+    <section class="page" id="page-cronograma">
+      <div class="page-eyebrow">Sección 03</div>
+      <div class="page-title"><em>Cronograma</em> de implementación</div>
+      <p class="page-desc">Desde la POC hasta el primer reporte entregado — 4 semanas.</p>
+      <div class="page-divider"></div>
+
+      <table class="tbl" style="margin-bottom:1rem;">
+        <thead>
+          <tr>
+            <th style="width:110px;">Semana</th>
+            <th>Actividad</th>
+            <th style="width:150px;">Responsable</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="badge badge-teal">Listo</span></td>
+            <td>Validación técnica en portales Enel y Aguas Andinas con datos de prueba</td>
+            <td><span style="font-size:12px;color:var(--rynex-teal);">Rynex</span></td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-accent">Sem. 1</span></td>
+            <td>Definición de estructura del reporte Excel, y del archivo entregado por Rupanco S.A.</td>
+            <td><span style="font-size:12px;color:var(--rynex-muted);">Rynex + Rupanco</span></td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-accent">Sem. 1</span></td>
+            <td>Desarrollo completo del robot para los 350 Números de clientes (Enel + Aguas Andinas)</td>
+            <td><span style="font-size:12px;color:var(--rynex-teal);">Rynex</span></td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-accent">Sem. 3</span></td>
+            <td>Prueba piloto completa con cantidad parcial de casos y ajustes en caso de ser necesario</td>
+            <td><span style="font-size:12px;color:var(--rynex-muted);">Rynex + Rupanco</span></td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-accent">Sem. 4</span></td>
+            <td>Primera ejecución con el total de casos + entrega del reporte a Rupanco S.A.</td>
+            <td><span style="font-size:12px;color:var(--rynex-teal);">Rynex</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout callout-teal">
+        Rynex valida la factibilidad técnica y se define que el desarrollo completo toma 4 semanas calendario.
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════
+         INVERSIÓN
+    ══════════════════════════════ -->
+    <section class="page" id="page-inversion">
+      <div class="page-eyebrow">Sección 04</div>
+      <div class="page-title">Propuesta <em>económica</em></div>
+      <p class="page-desc">Inversión única + servicio administrado mensual. Todos los valores son netos, <strong style="color:var(--rynex-white);">+IVA</strong>.</p>
+      <div class="page-divider"></div>
+
+      <!-- IMPLEMENTACIÓN -->
+      <div class="inv-hero">
+        <div>
+          <div class="inv-price-lbl">Implementación completa</div>
+          <div class="inv-price">25 <span>UF</span></div>
+          <div class="inv-price-sub">Neto + IVA · Pago único · Entrega en 4 semanas</div>
+        </div>
+        <div class="inv-includes">
+          <div class="inc-item"><div class="ck-sm">✓</div>POC técnica y validación de portales</div>
+          <div class="inc-item"><div class="ck-sm">✓</div>Desarrollo completo (Enel + Aguas Andinas)</div>
+          <div class="inc-item"><div class="ck-sm">✓</div>Pruebas con los 350 Números de clientes</div>
+          <div class="inc-item"><div class="ck-sm">✓</div>Primera entrega del reporte Excel</div>
+          <!-- <div class="inc-item"><div class="ck-sm">✓</div>Documentación y capacitación</div> -->
+        </div>
+      </div>
+
+      <!-- SERVICIO MENSUAL -->
+      <div class="subsection-title">Servicio recurrente mensual</div>
+      <div class="precio-opciones">
+        <div class="precio-card">
+          <div class="pc-tag">Opción A</div>
+          <div class="pc-title">2 ejecuciones al mes</div>
+          <div class="pc-desc">Reporte mensual consolidado del estado de todos los números de clientes.</div>
+          <div class="pc-price">3,5 UF <small>+ IVA / mes</small></div>
+        </div>
+        <!-- <div class="precio-card recommended">
+          <div class="pc-tag">Opción B · Recomendada</div>
+          <div class="pc-title">ecuciones al mes</div>
+          <div class="pc-desc">Mayor visibilidad del estado de suministros. Permite reaccionar ante deudas antes del cierre del período.</div>
+          <div class="pc-price">4 UF <small>+ IVA / mes</small></div>
+        </div> -->
+      </div>
+
+      <!-- ADICIONALES -->
+      <div class="subsection-title">Servicios adicionales</div>
+      <div class="grid-2" style="margin-bottom:1.5rem;">
+        <div class="card">
+          <div style="font-size:9px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--rynex-muted2);margin-bottom:6px;">Bajo demanda</div>
+          <div style="font-size:14px;font-weight:500;color:var(--rynex-white);margin-bottom:4px;">Horas adicionales</div>
+          <div style="font-size:12px;color:var(--rynex-muted);margin-bottom:10px;line-height:1.5;">Mejoras, nuevos campos en el reporte o ajustes fuera del servicio contratado.</div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:var(--rynex-accent2);">1 UF <small style="font-size:12px;font-weight:400;color:var(--rynex-muted);">+ IVA / hora</small></div>
+        </div>
+        <div class="card">
+          <div style="font-size:9px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--rynex-muted2);margin-bottom:6px;">Escalabilidad</div>
+          <div style="font-size:14px;font-weight:500;color:var(--rynex-white);margin-bottom:4px;">Nuevos Proveedores</div>
+          <div style="font-size:12px;color:var(--rynex-muted);margin-bottom:10px;line-height:1.5;">Incorporación de nuevos proveedores de servicios básicos.</div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:var(--rynex-accent2);">A cotizar</div>
+        </div>
+      </div>
+
+      <!-- ROI FUSIONADO -->
+      <!-- <div class="subsection-title">¿Por qué vale lo que vale?</div>
+      <div class="calc-box">
+        <h4>Costo real del proceso manual — confirmado en sesión de levantamiento</h4>
+        <div class="calc-row"><span class="lhs">Días que dura el proceso manual hoy</span><span class="rhs">4 días / mes</span></div>
+        <div class="calc-row"><span class="lhs">Horas equivalentes (jornada completa)</span><span class="rhs">~32 horas / mes</span></div>
+        <div class="calc-row"><span class="lhs">Total horas anuales perdidas en el proceso</span><span class="rhs">~384 horas / año</span></div>
+        <div class="calc-row"><span class="lhs">Costo hora gestión administrativa (estimado)</span><span class="rhs">$12.000 CLP</span></div>
+        <div class="calc-row total"><span class="lhs">Costo operativo anual del proceso manual</span><span class="rhs">~$4.600.000 CLP / año</span></div>
+      </div>
+
+      <div class="roi-box">
+        <div class="roi-num">&lt;3m</div>
+        <div class="roi-txt">
+          La implementación (25 UF ≈ $1.100.000 CLP + IVA) se recupera en menos de 3 meses.<br>
+          A partir del mes 4, cada mes operando es ahorro neto para Rupanco S.A.<br>
+          <strong style="color:var(--rynex-teal);">El proceso de 4 días se convierte en minutos.</strong>
+        </div>
+      </div> -->
+
+      <div class="callout callout-accent" style="display:flex;align-items:center;gap:12px;">
+        <span style="font-size:18px;">💳</span>
+        <span><strong>Forma de pago implementación:</strong> 50% al inicio · 50% contra entrega del primer reporte. Servicio mensual: facturación al inicio de cada período. <strong>Todos los valores + IVA.</strong></span>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════
+         GANTT / ROADMAP
+    ══════════════════════════════ -->
+    <section class="page" id="page-gantt">
+      <div class="page-eyebrow">Sección 05</div>
+      <div class="page-title"><em>Roadmap</em> de implementación</div>
+      <p class="page-desc">4 semanas · entregas parciales verificables · primer reporte real al finalizar.</p>
+      <div class="page-divider"></div>
+
+      <!-- GANTT VISUAL -->
+      <div style="overflow-x:auto; margin-bottom:1.5rem;">
+        <div style="min-width:580px;">
+
+          <!-- HEADER SEMANAS -->
+          <div style="display:grid;grid-template-columns:180px repeat(4,1fr);gap:2px;margin-bottom:4px;">
+            <div></div>
+            <div style="text-align:center;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--rynex-accent2);padding:6px 0;">Semana 1</div>
+            <div style="text-align:center;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--rynex-accent2);padding:6px 0;">Semana 2</div>
+            <div style="text-align:center;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--rynex-teal);padding:6px 0;">Semana 3</div>
+            <div style="text-align:center;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--rynex-teal);padding:6px 0;">Semana 4</div>
+          </div>
+
+          <!-- FILA: Desarrollo Enel -->
+          <div style="display:grid;grid-template-columns:180px repeat(4,1fr);gap:2px;margin-bottom:3px;align-items:center;">
+            <div style="font-size:12px;color:var(--rynex-muted);padding-right:10px;line-height:1.3;">Desarrollo robot Enel</div>
+            <div style="background:linear-gradient(90deg,var(--rynex-accent),rgba(108,99,255,0.6));border-radius:4px;height:28px;display:flex;align-items:center;padding:0 10px;font-size:10px;font-weight:600;color:#fff;"></div>
+            <div style="background:rgba(108,99,255,0.2);border-radius:4px;height:28px;display:flex;align-items:center;padding:0 10px;font-size:10px;color:var(--rynex-accent2);">Finalización</div>
+            <div style="background:var(--rynex-surface);border:1px solid var(--rynex-border);border-radius:4px;height:28px;"></div>
+            <div style="background:var(--rynex-surface);border:1px solid var(--rynex-border);border-radius:4px;height:28px;"></div>
+          </div>
+
+          <!-- FILA: Desarrollo Aguas -->
+          <div style="display:grid;grid-template-columns:180px repeat(4,1fr);gap:2px;margin-bottom:3px;align-items:center;">
+            <div style="font-size:12px;color:var(--rynex-muted);padding-right:10px;line-height:1.3;">Desarrollo robot Aguas Andinas</div>
+            <div style="background:rgba(108,99,255,0.15);border-radius:4px;height:28px;border:1px solid rgba(108,99,255,0.2);"></div>
+            <div style="background:linear-gradient(90deg,var(--rynex-accent),rgba(108,99,255,0.6));border-radius:4px;height:28px;display:flex;align-items:center;padding:0 10px;font-size:10px;font-weight:600;color:#fff;"></div>
+            <div style="background:var(--rynex-surface);border:1px solid var(--rynex-border);border-radius:4px;height:28px;"></div>
+            <div style="background:var(--rynex-surface);border:1px solid var(--rynex-border);border-radius:4px;height:28px;"></div>
+          </div>
+
+          <!-- FILA: Integración -->
+          <div style="display:grid;grid-template-columns:180px repeat(4,1fr);gap:2px;margin-bottom:3px;align-items:center;">
+            <div style="font-size:12px;color:var(--rynex-muted);padding-right:10px;line-height:1.3;">Integración y reporte Excel</div>
+            <div style="background:var(--rynex-surface);border:1px solid var(--rynex-border);border-radius:4px;height:28px;"></div>
+            <div style="background:linear-gradient(90deg,rgba(108,99,255,0.4),var(--rynex-accent));border-radius:4px;height:28px;display:flex;align-items:center;padding:0 10px;font-size:10px;color:var(--rynex-accent2);">Consolidación</div>
+            <div style="background:var(--rynex-surface);border:1px solid var(--rynex-border);border-radius:4px;height:28px;"></div>
+            <div style="background:var(--rynex-surface);border:1px solid var(--rynex-border);border-radius:4px;height:28px;"></div>
+          </div>
+
+          <!-- FILA: Prueba 100 consultas -->
+          <div style="display:grid;grid-template-columns:180px repeat(4,1fr);gap:2px;margin-bottom:3px;align-items:center;">
+            <div style="font-size:12px;color:var(--rynex-muted);padding-right:10px;line-height:1.3;">Prueba 100 consultas (interdiario)</div>
+            <div style="background:var(--rynex-surface);border:1px solid var(--rynex-border);border-radius:4px;height:28px;"></div>
+            <div style="background:var(--rynex-surface);border:1px solid var(--rynex-border);border-radius:4px;height:28px;"></div>
+            <div style="background:linear-gradient(90deg,var(--rynex-teal),rgba(29,203,160,0.6));border-radius:4px;height:28px;display:flex;align-items:center;padding:0 10px;font-size:10px;font-weight:600;color:var(--rynex-dark);">✓ Entregable parcial</div>
+            <div style="background:var(--rynex-surface);border:1px solid var(--rynex-border);border-radius:4px;height:28px;"></div>
+          </div>
+
+          <!-- FILA: Validación y ajustes -->
+          <div style="display:grid;grid-template-columns:180px repeat(4,1fr);gap:2px;margin-bottom:3px;align-items:center;">
+            <div style="font-size:12px;color:var(--rynex-muted);padding-right:10px;line-height:1.3;">Validación y ajustes finales</div>
+            <div style="background:var(--rynex-surface);border:1px solid var(--rynex-border);border-radius:4px;height:28px;"></div>
+            <div style="background:var(--rynex-surface);border:1px solid var(--rynex-border);border-radius:4px;height:28px;"></div>
+            <div style="background:rgba(29,203,160,0.15);border-radius:4px;height:28px;border:1px solid rgba(29,203,160,0.2);"></div>
+            <div style="background:linear-gradient(90deg,var(--rynex-teal),rgba(29,203,160,0.7));border-radius:4px;height:28px;display:flex;align-items:center;padding:0 10px;font-size:10px;font-weight:600;color:var(--rynex-dark);">Validación cliente</div>
+          </div>
+
+          <!-- FILA: Entrega final -->
+          <div style="display:grid;grid-template-columns:180px repeat(4,1fr);gap:2px;margin-bottom:3px;align-items:center;">
+            <div style="font-size:12px;color:var(--rynex-white);font-weight:600;padding-right:10px;line-height:1.3;">Entrega primer reporte</div>
+            <div style="background:var(--rynex-surface);border:1px solid var(--rynex-border);border-radius:4px;height:28px;"></div>
+            <div style="background:var(--rynex-surface);border:1px solid var(--rynex-border);border-radius:4px;height:28px;"></div>
+            <div style="background:var(--rynex-surface);border:1px solid var(--rynex-border);border-radius:4px;height:28px;"></div>
+            <div style="background:linear-gradient(90deg,rgba(29,203,160,0.8),var(--rynex-teal));border-radius:4px;height:28px;display:flex;align-items:center;justify-content:center;padding:0 10px;font-size:10px;font-weight:700;color:var(--rynex-dark);">🎯 350 Números de clientes</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- LEYENDA -->
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:1.5rem;">
+        <div style="display:flex;align-items:center;gap:7px;font-size:11px;color:var(--rynex-muted);">
+          <div style="width:20px;height:10px;border-radius:3px;background:var(--rynex-accent);"></div>Desarrollo
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;font-size:11px;color:var(--rynex-muted);">
+          <div style="width:20px;height:10px;border-radius:3px;background:var(--rynex-teal);"></div>Pruebas y entregables
+        </div>
+      </div>
+
+      <!-- ENTREGABLES PARCIALES -->
+      <div class="subsection-title">Entregables parciales por semana</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <div style="min-width:80px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--rynex-accent2);padding-top:12px;">Sem. 1–2</div>
+          <div class="card" style="flex:1;margin:0;">
+            <div style="font-size:13px;font-weight:600;color:var(--rynex-white);margin-bottom:4px;">Desarrollo e implementación</div>
+            <div style="font-size:12px;color:var(--rynex-muted);line-height:1.6;">Robot Enel + Robot Aguas Andinas desarrollados e integrados. Lógica de consolidación en reporte Excel operativa. <span style="color:var(--rynex-accent2);">Sin entregable visible aún — trabajo interno Rynex.</span></div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <div style="min-width:80px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--rynex-teal);padding-top:12px;">Sem. 3</div>
+          <div class="card card-teal" style="flex:1;margin:0;">
+            <div style="font-size:13px;font-weight:600;color:var(--rynex-white);margin-bottom:4px;">✦ Entregable parcial — Prueba con 100 números de clientes</div>
+            <div style="font-size:12px;color:var(--rynex-muted);line-height:1.6;">Ejecución interdiaria sobre una muestra de 100 números de clientes. Rupanco S.A. puede revisar el formato del reporte, validar la información y proponer ajustes antes de la entrega final.</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <div style="min-width:80px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--rynex-teal);padding-top:12px;">Sem. 4</div>
+          <div class="card card-teal" style="flex:1;margin:0;">
+            <div style="font-size:13px;font-weight:600;color:var(--rynex-white);margin-bottom:4px;">🎯 Entrega final — 700 números de cuentas completos</div>
+            <div style="font-size:12px;color:var(--rynex-muted);line-height:1.6;">Prueba completa con todos los registros, validación con el cliente e inicio formal del servicio administrado mensual. Primer reporte oficial entregado a Rupanco S.A.</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════
+         RESPONSABLES
+    ══════════════════════════════ -->
+    <section class="page" id="page-responsables">
+      <div class="page-eyebrow">Sección 06</div>
+      <div class="page-title"><em>Responsabilidades</em> del proyecto</div>
+
+      <p class="page-desc">Quién hace qué en este proyecto.</p>
+      <div class="page-divider"></div>
+
+      <div class="grid-2">
+        <div class="card resp-block">
+          <h4>Por parte de Rynex</h4>
+          <!-- <div class="resp-item"><div class="r-role">Desarroll</div><div class="r-desc">Coordinación, comunicación y cumplimiento de plazos.</div></div> -->
+          <div class="resp-item"><div class="r-role">Desarrollo RPA</div><div class="r-desc">Diseña, desarrolla e implementa el proceso automatizado referido en esta propuesta.</div></div>
+          <div class="resp-item"><div class="r-role">Operadoción del servicio</div><div class="r-desc">Monitoreo mensual de las ejecuciones y entrega del reporte usando casillas de correo electrónico.</div></div>
+          <div class="resp-item"><div class="r-role">Mantención RPA</div><div class="r-desc">Rynex será responsable 100% sobre las tareas de mantención relacionadas con el proceso automatizado implementado.</div></div>
+        </div>
+        <div class="card resp-block">
+          <h4>Por parte de Rupanco S.A.</h4>
+          <div class="resp-item"><div class="r-role">Revisión del reporte</div><div class="r-desc">Validación de requerimientos y aprobación de entregables.</div></div>
+          <div class="resp-item"><div class="r-role">Entrega de Archivo</div><div class="r-desc">Rupanco SA, será el responsable de entregar el archivo input que alimentará la ejecución del proceso automatizado.</div></div>
+          <div class="resp-item"><div class="r-role">Receptor del reporte</div><div class="r-desc">Revisión y uso del reporte Excel mensual entregado por Rynex.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════
+         CLÁUSULAS
+    ══════════════════════════════ -->
+    <section class="page" id="page-clausulas">
+      <div class="page-eyebrow">Sección 07</div>
+      <div class="page-title">Cláusulas y <em>consideraciones</em></div>
+      <p class="page-desc">Condiciones técnicas y legales de esta propuesta.</p>
+      <div class="page-divider"></div>
+
+      <div class="clausula"><div class="cl-num">01</div><div class="cl-body"><strong>Dependencia de portales externos</strong><span>La solución opera sobre los portales públicos de Enel y Aguas Andinas. Cambios en su estructura pueden requerir ajustes al robot, estarán cubiertos dentro del servicio mensual administrado por RYNEX.</span></div></div>
+      <div class="clausula"><div class="cl-num">02</div><div class="cl-body"><strong>Provisión datos y números de clientes</strong><span>El cliente debe proveer los datos de relacionados con los números de clientes por proveedor para la debida gestión del proceso automatizado.</span></div></div>
+      <div class="clausula"><div class="cl-num">03</div><div class="cl-body"><strong>Alcance de la información</strong><span>El robot consulta y reporta el estado de pago/deuda de cada número clientes por proveedor de servicio. No descarga, almacena ni redistribuye boletas o facturas originales desde los portales.</span></div></div>
+      <div class="clausula"><div class="cl-num">04</div><div class="cl-body"><strong>Servicio administrado</strong><span>Rynex será el responsable de la operación del proceso automatizado mensualmente y entrega el reporte. Cualquier falla en la ejecución es gestionada y resuelta por Rynex sin costo adicional dentro del servicio mensual contratado.</span></div></div>
+      <div class="clausula"><div class="cl-num">05</div><div class="cl-body"><strong>Confidencialidad</strong><span>Este documento y la información de los clientes y edificios son de uso exclusivo de Rupanco S.A. y Rynex. Queda prohibida su reproducción sin autorización expresa.</span></div></div>
+      <div class="clausula"><div class="cl-num">06</div><div class="cl-body"><strong>Validez de la propuesta</strong><span>Los valores indicados tienen validez de 45 días calendario desde la fecha de emisión.</span></div></div>
+      <div class="clausula"><div class="cl-num">07</div><div class="cl-body"><strong>Forma de pago</strong><span>Implementación: 50% al inicio del proyecto · 50% contra entrega del primer reporte. Servicio mensual: facturación al inicio de cada período de servicio.</span></div></div>
+    </section>
+
+    <!-- ══════════════════════════════
+         PRÓXIMOS PASOS
+    ══════════════════════════════ -->
+    <section class="page" id="page-pasos">
+      <div class="page-eyebrow">Sección 08</div>
+      <div class="page-title">Próximos <em>pasos</em></div>
+      <p class="page-desc">El camino desde aquí hasta el primer reporte en tu bandeja.</p>
+      <div class="page-divider"></div>
+
+      <div class="paso done">
+        <div class="p-num">✓</div>
+        <div class="p-txt">Sesión de levantamiento completada</div>
+        <div class="p-status" style="color:var(--rynex-teal);">Listo</div>
+      </div>
+      <!-- <div class="paso inprogress">
+        <div class="p-num">→</div>
+        <div class="p-txt">Entrega de 5 registros de prueba por Rupanco S.A. (N° cuenta + N° última boleta) para POC</div>
+        <div class="p-status" style="color:var(--rynex-accent2);">Pendiente</div>
+      </div> -->
+      <div class="paso done">
+        <div class="p-num">✓</div>
+        <div class="p-txt">Evaluación factibilidad técnica de automatizar en portales Enel y Aguas Andinas por parte de Rynex</div>
+        <div class="p-status" style="color:var(--rynex-teal);">Listo</div>
+      </div>
+      <div class="paso">
+        <div class="p-num">3</div>
+        <div class="p-txt">Validación de POC y firma de orden de trabajo</div>
+      </div>
+      <div class="paso">
+        <div class="p-num">4</div>
+        <div class="p-txt">Desarrollo completo del robot (350 departamentos)</div>
+      </div>
+      <div class="paso">
+        <div class="p-num">5</div>
+        <div class="p-txt">Primer reporte Excel entregado a Rupanco S.A. ✦</div>
+      </div>
+
+      <div class="callout callout-teal" style="margin-top:1.5rem;">
+        <strong>El siguiente paso es tuyo:</strong> Revisar propuesta comercial y muestra de la POC.<br>
+        <span style="font-size:12px;margin-top:4px;display:block;">juven.blanco@rynex.cl · +56 950 500 179 · www.rynex.cl</span>
+      </div>
+    </section>
+
+  </div><!-- /main-content -->
+</div><!-- /app -->
+
+<button class="pdf-fab" onclick="exportPDF()">⬇ Exportar PDF</button>
+
+<script>
+/* ================================================================
+   CONFIG — EDITA AQUÍ
+   ================================================================ */
+const CONFIG = {
+  credentials: [
+    { usuario: 'igal',  password: 'rupanco2026' },
+    { usuario: 'rynex', password: 'admin2026'   },
+  ],
+  menu: {
+    portada:       { label: 'Portada',              icono: '🏠', num: '',   visible: true },
+    problema:      { label: 'El problema',           icono: '⚡', num: '01', visible: true },
+    solucion:      { label: 'La solución',           icono: '🤖', num: '02', visible: true },
+    cronograma:    { label: 'Cronograma',            icono: '📅', num: '03', visible: true },
+    inversion:     { label: 'Inversión',             icono: '💰', num: '04', visible: true },
+    gantt:         { label: 'Roadmap / Gantt',       icono: '📊', num: '05', visible: true },
+    responsables:  { label: 'Responsabilidades',          icono: '👥', num: '06', visible: true },
+    clausulas:     { label: 'Cláusulas',             icono: '📄', num: '07', visible: true },
+    pasos:         { label: 'Próximos pasos',        icono: '🚀', num: '08', visible: true },
+  }
+};
+
+/* ── LOGIN ── */
+function doLogin() {
+  const user  = document.getElementById('inp-user').value.trim();
+  const pass  = document.getElementById('inp-pass').value;
+  const err   = document.getElementById('login-error');
+  const match = CONFIG.credentials.find(c => c.usuario === user && c.password === pass);
+  if (match) {
+    err.style.display = 'none';
+    sessionStorage.setItem('rynex_auth_v3', user);
+    document.getElementById('login-screen').classList.add('hidden');
+    const app = document.getElementById('app');
+    app.classList.add('visible');
+    document.getElementById('sidebar-user').innerHTML = `👤 <span style="color:rgba(255,255,255,0.4)">${user}</span>`;
+    buildNav(); navigateTo('portada');
+  } else {
+    err.style.display = 'block';
+    document.getElementById('inp-pass').value = '';
+  }
+}
+function doLogout() {
+  sessionStorage.removeItem('rynex_auth_v3');
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('inp-user').value = '';
+  document.getElementById('inp-pass').value = '';
+}
+['inp-user','inp-pass'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+});
+window.addEventListener('DOMContentLoaded', () => {
+  const u = sessionStorage.getItem('rynex_auth_v3');
+  if (u) {
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app').classList.add('visible');
+    document.getElementById('sidebar-user').innerHTML = `👤 <span style="color:rgba(255,255,255,0.4)">${u}</span>`;
+    buildNav(); navigateTo('portada');
+  }
+});
+
+/* ── NAV ── */
+function buildNav() {
+  const list = document.getElementById('nav-list');
+  list.innerHTML = '';
+  Object.entries(CONFIG.menu).forEach(([key, item]) => {
+    if (!item.visible) return;
+    const li = document.createElement('li');
+    const btn = document.createElement('button');
+    btn.className = 'nav-btn'; btn.dataset.key = key;
+    btn.innerHTML = `<span class="n-ico">${item.icono}</span><span>${item.label}</span>${item.num ? `<span class="n-num">${item.num}</span>` : ''}`;
+    btn.onclick = () => navigateTo(key);
+    li.appendChild(btn); list.appendChild(li);
+  });
+}
+function navigateTo(key) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const t = document.getElementById(`page-${key}`);
+  if (t) t.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector(`.nav-btn[data-key="${key}"]`);
+  if (btn) btn.classList.add('active');
+  const item = CONFIG.menu[key];
+  if (item) document.getElementById('topbar-title').textContent = item.label;
+  if (window.innerWidth < 768) document.getElementById('sidebar').classList.remove('open');
+}
+
+/* ── PDF ── */
+function exportPDF() {
+  const btn = document.querySelector('.pdf-fab');
+  btn.style.display = 'none';
+  window.print();
+  setTimeout(() => { btn.style.display = 'flex'; }, 1200);
+}
+</script>
+</body>
+</html>
